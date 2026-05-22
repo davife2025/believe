@@ -1,0 +1,12 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "regions": ["iad1"],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@believe-supabase-url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@believe-supabase-anon-key",
+    "NEXT_PUBLIC_APP_URL": "@believe-app-url"
+  }
+}
