@@ -4,9 +4,23 @@
   "framework": "nextjs",
   "installCommand": "npm install",
   "regions": ["iad1"],
+
+  "crons": [
+    {
+      "path": "/api/cron/refresh-opportunities",
+      "schedule": "0 8 * * 1"
+    },
+    {
+      "path": "/api/cron/refresh-resources",
+      "schedule": "0 6 * * 0"
+    }
+  ],
+
   "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@believe-supabase-url",
+    "NEXT_PUBLIC_SUPABASE_URL":      "@believe-supabase-url",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@believe-supabase-anon-key",
-    "NEXT_PUBLIC_APP_URL": "@believe-app-url"
+    "SUPABASE_SERVICE_ROLE_KEY":     "@believe-supabase-service-role-key",
+    "CRON_SECRET":                   "@believe-cron-secret",
+    "NEXT_PUBLIC_APP_URL":           "@believe-app-url"
   }
 }

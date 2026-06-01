@@ -1,0 +1,32 @@
+# ============================================================
+# BELIEVE — Render Deploy Config
+# Defines the background worker service
+# Place this in the render-worker/ directory root
+# ============================================================
+
+services:
+  - type: web
+    name: believe-worker
+    runtime: node
+    region: oregon          # or frankfurt for lower latency from Africa
+    plan: free              # free tier — spins down after 15min inactivity
+                            # upgrade to starter ($7/mo) for always-on
+    rootDir: .
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: VERCEL_URL
+        sync: false          # set manually in Render dashboard
+        # Value: https://your-believe-app.vercel.app
+
+      - key: WORKER_SECRET
+        sync: false          # must match WORKER_SECRET in Vercel env vars
+        # Value: same random string from your .env.local
+
+      - key: PORT
+        value: 3001

@@ -1,13 +1,23 @@
+// ============================================================
+// src/components/ui/ProgressBar.tsx
+// ============================================================
+'use client'
+
 import { cn } from '@/lib/utils'
 
 interface ProgressBarProps {
-  value: number        // 0-100
+  value: number
   className?: string
   color?: string
   showLabel?: boolean
 }
 
-export function ProgressBar({ value, className, color, showLabel = false }: ProgressBarProps) {
+export function ProgressBar({
+  value,
+  className,
+  color,
+  showLabel = false,
+}: ProgressBarProps) {
   const clamped = Math.min(100, Math.max(0, value))
 
   return (
@@ -17,9 +27,7 @@ export function ProgressBar({ value, className, color, showLabel = false }: Prog
           className="progress-bar-fill"
           style={{
             width: `${clamped}%`,
-            background: color
-              ? `${color}`
-              : 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+            background: color ?? 'linear-gradient(90deg, #6366f1, #8b5cf6)',
           }}
         />
       </div>

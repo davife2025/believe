@@ -1,0 +1,82 @@
+# ============================================================
+# BELIEVE PLATFORM — Render Deployment Config
+# Deploys the Next.js app as a web service on Render
+# ============================================================
+
+services:
+  # ── Next.js Web Service ───────────────────────────────────
+  - type: web
+    name: believe-app
+    runtime: node
+    region: oregon          # Change to: ohio, frankfurt, singapore, or ohio
+    plan: free              # free | starter ($7/mo) | standard ($25/mo)
+
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+
+    # Health check — Render pings this to know the app is up
+    healthCheckPath: /api/health
+
+    # Auto-deploy on push to main branch
+    autoDeploy: true
+
+    # Environment variables
+    # Set these in Render Dashboard → Environment
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false           # Set manually in Render dashboard
+
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false           # Set manually in Render dashboard
+
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false           # Set manually — NEVER expose in frontend
+
+      - key: CRON_SECRET
+        generateValue: true   # Render auto-generates a secure random value
+
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false           # Set to your Render URL e.g. https://believe-app.onrender.com
+
+    # Scale settings (free tier = 1 instance, spins down after 15min inactivity)
+    scaling:
+      minInstances: 1
+      maxInstances: 1         # Increase on paid plan if needed
+
+  # ── Cron Jobs on Render (alternative to Vercel Cron) ─────
+  # Uncomment these if you prefer Render crons over Vercel crons
+  # Note: Vercel crons are already configured in vercel.json
+  # Only use ONE set (Vercel OR Render) — not both
+
+  # - type: cron
+  #   name: believe-refresh-opportunities
+  #   runtime: node
+  #   schedule: "0 8 * * 1"   # Every Monday 8am UTC
+  #   buildCommand: npm install
+  #   startCommand: >
+  #     curl -s -X GET
+  #     -H "Authorization: Bearer $CRON_SECRET"
+  #     $NEXT_PUBLIC_APP_URL/api/cron/refresh-opportunities
+  #   envVars:
+  #     - key: CRON_SECRET
+  #       sync: false
+  #     - key: NEXT_PUBLIC_APP_URL
+  #       sync: false
+
+  # - type: cron
+  #   name: believe-refresh-resources
+  #   runtime: node
+  #   schedule: "0 6 * * 0"   # Every Sunday 6am UTC
+  #   buildCommand: npm install
+  #   startCommand: >
+  #     curl -s -X GET
+  #     -H "Authorization: Bearer $CRON_SECRET"
+  #     $NEXT_PUBLIC_APP_URL/api/cron/refresh-resources
+  #   envVars:
+  #     - key: CRON_SECRET
+  #       sync: false
+  #     - key: NEXT_PUBLIC_APP_URL
+  #       sync: false

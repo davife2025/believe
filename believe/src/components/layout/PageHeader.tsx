@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/layout/PageHeader.tsx
+// ============================================================
+'use client'
+
 interface PageHeaderProps {
   icon: string
   title: string
@@ -6,9 +11,15 @@ interface PageHeaderProps {
   children?: React.ReactNode
 }
 
-export function PageHeader({ icon, title, description, color = '#6366f1', children }: PageHeaderProps) {
+export function PageHeader({
+  icon,
+  title,
+  description,
+  color = '#6366f1',
+  children,
+}: PageHeaderProps) {
   return (
-    <div className="page-header flex items-start justify-between">
+    <div className="page-header flex items-start justify-between gap-4 flex-wrap">
       <div className="flex items-center gap-4">
         <div
           className="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
@@ -21,7 +32,9 @@ export function PageHeader({ icon, title, description, color = '#6366f1', childr
           <p className="text-sm text-white/40 mt-0.5">{description}</p>
         </div>
       </div>
-      {children && <div className="flex items-center gap-2 mt-1">{children}</div>}
+      {children && (
+        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">{children}</div>
+      )}
     </div>
   )
 }
