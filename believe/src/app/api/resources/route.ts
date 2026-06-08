@@ -20,11 +20,11 @@ export async function GET(req: NextRequest) {
     .from('v_resources_with_progress')
     .select('*', { count: 'exact' })
 
-  if (category)             query = query.eq('category_slug', category)
-  if (type)                 query = query.eq('type', type)
-  if (difficulty)           query = query.eq('difficulty', difficulty)
-  if (featured === 'true')  query = query.eq('is_featured', true)
-  if (search)               query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`)
+  if (category)            query = query.eq('category_slug', category)
+  if (type)                query = query.eq('type', type)
+  if (difficulty)          query = query.eq('difficulty', difficulty)
+  if (featured === 'true') query = query.eq('is_featured', true)
+  if (search)              query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`)
 
   query = query
     .order('is_featured', { ascending: false })
@@ -32,7 +32,6 @@ export async function GET(req: NextRequest) {
     .range(offset, offset + limit - 1)
 
   const { data, error, count } = await query
-
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json(
@@ -51,7 +50,6 @@ export async function POST(req: NextRequest) {
     .from('resources')
     .upsert(body, { onConflict: 'url' })
     .select()
-    .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ data }, { status: 201 })
+  return NextResponse.json({ data, inserted: data?.length ?? 0 }, { status: 201 })
 }

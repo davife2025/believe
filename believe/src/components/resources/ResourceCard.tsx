@@ -1,16 +1,30 @@
 'use client'
 
 import { useState } from 'react'
-import type { ResourceWithMeta } from '@/lib/types'
 import {
-  TYPE_ICONS, TYPE_LABELS,
-  DIFFICULTY_COLORS, DIFFICULTY_LABELS,
-  PROGRESS_COLORS, PROGRESS_LABELS,
-  cn,
-} from '@/lib/utils'
-import { Badge } from '@/components/ui/Badge'
+  ExternalLink, Bookmark, BookmarkCheck,
+  CheckCircle2, Circle, PauseCircle, PlayCircle,
+  Clock, Award, BadgeCheck,
+} from 'lucide-react'
+import { RESOURCE_TYPE_ICONS } from '@/lib/icons'
+import type { ResourceWithMeta } from '@/lib/types'
+import { DIFFICULTY_COLORS, DIFFICULTY_LABELS, cn } from '@/lib/utils'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { useProgress } from '@/hooks/useOpportunities'
+import { useToast } from '@/components/ui/Toast'
+import type { ProgressStatus } from '@/lib/types'
+
+const PROGRESS_CONFIG: Record<ProgressStatus, {
+  label: string
+  Icon: React.ComponentType<any>
+  color: string
+  bg: string
+}> = {
+  not_started: { label: 'Not Started', Icon: Circle,       color: 'text-white/30', bg: '' },
+  in_progress: { label: 'In Progress', Icon: PlayCircle,   color: 'text-sky-400',  bg: 'bg-sky-500/10' },
+  completed:   { label: 'Completed',   Icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+  paused:      { label: 'Paused',      Icon: PauseCircle,  color: 'text-amber-400', bg: 'bg-amber-500/10' },
+}
 
 interface ResourceCardProps {
   resource: ResourceWithMeta
@@ -19,159 +33,195 @@ interface ResourceCardProps {
 
 export function ResourceCard({ resource, onUpdate }: ResourceCardProps) {
   const { upsertProgress, toggleBookmark } = useProgress()
-  const [bookmarked, setBookmarked] = useState(resource.is_bookmarked)
-  const [status, setStatus] = useState(resource.progress_status || 'not_started')
-  const [saving, setSaving] = useState(false)
+  const { success, error: toastError } = useToast()
+  const [bookmarked, setBookmarked]     = useState(resource.is_bookmarked)
+  const [status, setStatus]             = useState<ProgressStatus>(resource.progress_status || 'not_started')
+  const [saving, setSaving]             = useState(false)
 
-  const handleStatusChange = async (newStatus: string) => {
+  const TypeIcon = RESOURCE_TYPE_ICONS[resource.type] || Circle
+  const accentColor = resource.category_color || '#6366f1'
+
+  const handleStatusChange = async (newStatus: ProgressStatus) => {
     setSaving(true)
-    const percent = newStatus === 'completed' ? 100 : newStatus === 'in_progress' ? 10 : 0
-    await upsertProgress(resource.id, newStatus, percent)
-    setStatus(newStatus as typeof status)
+    const percent = newStatus === 'completed' ? 100 : newStatus === 'in_progress' ? 5 : 0
+    const { error } = await upsertProgress(resource.id, newStatus, percent)
+    if (error) {
+      toastError('Failed to update', 'Could not save your progress.')
+    } else {
+      setStatus(newStatus)
+      if (newStatus === 'completed') success('Completed! 🎉', resource.title)
+      else if (newStatus === 'in_progress') success('Started', resource.title)
+      onUpdate?.()
+    }
     setSaving(false)
-    onUpdate?.()
   }
 
   const handleBookmark = async () => {
     await toggleBookmark(resource.id, bookmarked)
     setBookmarked(!bookmarked)
+    success(bookmarked ? 'Bookmark removed' : 'Bookmarked', resource.title)
     onUpdate?.()
   }
 
-  const accentColor = resource.category_color || '#6366f1'
+  const progressConfig = PROGRESS_CONFIG[status]
+  const progressPct = status === 'completed' ? 100 : resource.progress_percent || 0
 
   return (
     <div
       className={cn(
-        'believe-card group flex flex-col p-5 gap-3 relative overflow-hidden',
-        resource.is_featured && 'glow-purple'
+        'believe-card flex flex-col overflow-hidden group relative',
+        resource.is_featured && 'glow-brand'
       )}
     >
-      {/* Featured indicator */}
-      {resource.is_featured && (
-        <div
-          className="absolute top-0 left-0 right-0 h-0.5"
-          style={{ background: `linear-gradient(90deg, ${accentColor}, transparent)` }}
-        />
-      )}
+      {/* Category color accent line */}
+      <div
+        className="h-[2px] w-full flex-shrink-0"
+        style={{ background: `linear-gradient(90deg, ${accentColor}80, transparent 70%)` }}
+      />
 
-      {/* Top row */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Type badge */}
-          <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium border"
-            style={{
-              background: `${accentColor}12`,
-              borderColor: `${accentColor}30`,
-              color: accentColor,
-            }}
-          >
-            {TYPE_ICONS[resource.type]} {TYPE_LABELS[resource.type]}
-          </span>
+      <div className="p-4 flex flex-col gap-3 flex-1">
 
-          {/* Difficulty */}
-          {resource.difficulty && (
-            <Badge className={DIFFICULTY_COLORS[resource.difficulty]}>
-              {DIFFICULTY_LABELS[resource.difficulty]}
-            </Badge>
-          )}
+        {/* Header row */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+            {/* Type chip */}
+            <div
+              className="inline-flex items-center gap-1.5 px-2 py-1 rounded-[var(--radius-sm)] text-[11.5px] font-medium flex-shrink-0"
+              style={{ background: `${accentColor}14`, color: accentColor }}
+            >
+              <TypeIcon size={11} strokeWidth={2.2} />
+              <span className="capitalize">{resource.type}</span>
+            </div>
 
-          {/* Official */}
-          {resource.is_official && (
-            <Badge className="bg-sky-500/10 text-sky-400 border-sky-500/20">✓ Official</Badge>
-          )}
+            {/* Difficulty */}
+            {resource.difficulty && (
+              <span className={cn('badge text-[11px]', DIFFICULTY_COLORS[resource.difficulty])}>
+                {DIFFICULTY_LABELS[resource.difficulty]}
+              </span>
+            )}
 
-          {/* Certificate */}
-          {resource.has_certificate && (
-            <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20">🏅 Cert</Badge>
-          )}
-        </div>
+            {/* Official */}
+            {resource.is_official && (
+              <span className="badge badge-success flex items-center gap-1">
+                <BadgeCheck size={10} /> Official
+              </span>
+            )}
 
-        {/* Bookmark */}
-        <button
-          onClick={handleBookmark}
-          className={cn(
-            'flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-sm transition-all',
-            bookmarked
-              ? 'bg-indigo-500/20 text-indigo-400'
-              : 'text-white/20 hover:text-white/60 hover:bg-white/5'
-          )}
-          title={bookmarked ? 'Remove bookmark' : 'Bookmark'}
-        >
-          {bookmarked ? '🔖' : '○'}
-        </button>
-      </div>
+            {/* Certificate */}
+            {resource.has_certificate && (
+              <span className="badge flex items-center gap-1" style={{ color: '#fbbf24', borderColor: 'rgba(251,191,36,0.2)', background: 'rgba(251,191,36,0.08)' }}>
+                <Award size={10} /> Cert
+              </span>
+            )}
+          </div>
 
-      {/* Title + description */}
-      <div className="flex-1">
-        <a
-          href={resource.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm font-semibold text-white/90 hover:text-white leading-snug line-clamp-2 transition-colors"
-        >
-          {resource.title}
-        </a>
-        {resource.description && (
-          <p className="mt-1.5 text-[12.5px] text-white/40 leading-relaxed line-clamp-2">
-            {resource.description}
-          </p>
-        )}
-      </div>
-
-      {/* Meta row */}
-      <div className="flex items-center gap-3 text-[11px] text-white/30">
-        {resource.platform && <span>{resource.platform}</span>}
-        {resource.author && <><span>·</span><span>{resource.author}</span></>}
-        {resource.duration && <><span>·</span><span>⏱ {resource.duration}</span></>}
-      </div>
-
-      {/* Tags */}
-      {resource.tags?.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {resource.tags.slice(0, 4).map((tag) => (
-            <span key={tag} className="tag-pill">{tag}</span>
-          ))}
-          {resource.tags.length > 4 && (
-            <span className="tag-pill">+{resource.tags.length - 4}</span>
-          )}
-        </div>
-      )}
-
-      {/* Progress + status */}
-      <div className="pt-2 border-t border-white/[0.05] space-y-2">
-        {status !== 'not_started' && (
-          <ProgressBar
-            value={status === 'completed' ? 100 : resource.progress_percent || 10}
-            color={accentColor}
-          />
-        )}
-        <div className="flex items-center justify-between">
-          <select
-            value={status}
-            onChange={(e) => handleStatusChange(e.target.value)}
-            disabled={saving}
+          {/* Bookmark */}
+          <button
+            onClick={handleBookmark}
             className={cn(
-              'text-[11px] font-medium px-2 py-1 rounded-md border-0 outline-none cursor-pointer transition-all',
-              'bg-white/5 text-white/50',
-              status !== 'not_started' && PROGRESS_COLORS[status as keyof typeof PROGRESS_COLORS]
+              'flex-shrink-0 w-7 h-7 rounded-[var(--radius-sm)] flex items-center justify-center transition-all',
+              bookmarked
+                ? 'text-indigo-400 bg-indigo-500/15'
+                : 'text-[var(--text-disabled)] hover:text-[var(--text-secondary)] hover:bg-white/5'
             )}
           >
-            <option value="not_started">Not Started</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="paused">Paused</option>
-          </select>
+            {bookmarked
+              ? <BookmarkCheck size={14} strokeWidth={2} />
+              : <Bookmark      size={14} strokeWidth={1.8} />
+            }
+          </button>
+        </div>
 
+        {/* Title + description */}
+        <div className="flex-1">
           <a
             href={resource.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[11px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+            className="text-[14px] font-semibold text-[var(--text-primary)] hover:text-white leading-snug line-clamp-2 transition-colors group/link flex items-start gap-1.5"
           >
-            Open →
+            <span className="flex-1">{resource.title}</span>
+            <ExternalLink size={12} className="flex-shrink-0 mt-0.5 opacity-0 group-hover/link:opacity-40 transition-opacity" />
           </a>
+          {resource.description && (
+            <p className="mt-1.5 text-[12.5px] text-[var(--text-tertiary)] leading-relaxed line-clamp-2">
+              {resource.description}
+            </p>
+          )}
+        </div>
+
+        {/* Meta */}
+        <div className="flex items-center gap-2 text-[11.5px] text-[var(--text-disabled)]">
+          {resource.platform && <span>{resource.platform}</span>}
+          {resource.author && (
+            <>
+              <span className="opacity-40">·</span>
+              <span>{resource.author}</span>
+            </>
+          )}
+          {resource.duration && (
+            <>
+              <span className="opacity-40">·</span>
+              <span className="flex items-center gap-1">
+                <Clock size={10} /> {resource.duration}
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Tags */}
+        {resource.tags?.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {resource.tags.slice(0, 4).map((tag) => (
+              <span key={tag} className="badge text-[10.5px]">{tag}</span>
+            ))}
+            {resource.tags.length > 4 && (
+              <span className="badge text-[10.5px]">+{resource.tags.length - 4}</span>
+            )}
+          </div>
+        )}
+
+        {/* Progress + status footer */}
+        <div className="pt-3 mt-auto border-t border-[var(--border-subtle)] space-y-2">
+          {status !== 'not_started' && (
+            <ProgressBar value={progressPct} color={accentColor} />
+          )}
+
+          <div className="flex items-center justify-between">
+            {/* Status selector */}
+            <div className="flex gap-1">
+              {(Object.entries(PROGRESS_CONFIG) as [ProgressStatus, typeof progressConfig][]).map(([s, cfg]) => (
+                <button
+                  key={s}
+                  onClick={() => handleStatusChange(s)}
+                  disabled={saving}
+                  title={cfg.label}
+                  className={cn(
+                    'w-6 h-6 rounded-[var(--radius-sm)] flex items-center justify-center transition-all',
+                    status === s
+                      ? `${cfg.bg} ${cfg.color}`
+                      : 'text-[var(--text-disabled)] hover:text-[var(--text-tertiary)] hover:bg-white/5'
+                  )}
+                >
+                  <cfg.Icon size={12} strokeWidth={status === s ? 2.2 : 1.8} />
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className={cn('text-[11px] font-medium', progressConfig.color)}>
+                {progressConfig.label}
+              </span>
+              <a
+                href={resource.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-ghost btn-sm text-[var(--brand-300)] hover:text-white px-2 py-1"
+              >
+                Open
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -8,40 +8,54 @@ import { StreakCounter } from '@/components/dashboard/StreakCounter'
 import { ProgressRings } from '@/components/dashboard/ProgressRings'
 import { RecentActivity } from '@/components/dashboard/RecentActivity'
 import { QuickNotes } from '@/components/dashboard/QuickNotes'
-import { NAV_ITEMS } from '@/lib/utils'
+import {
+  BookOpen, Zap, Trophy, Bookmark,
+  TrendingUp, ArrowRight, Brain, Bot, Blocks,
+  Shield, Hammer,
+} from 'lucide-react'
 import Link from 'next/link'
 
-// ── Stats Grid ────────────────────────────────────────────────
-function StatsGrid() {
+// ── Greeting ──────────────────────────────────────────────────
+function getGreeting() {
+  const h = new Date().getHours()
+  if (h < 5)  return 'Burning the midnight oil'
+  if (h < 12) return 'Good morning'
+  if (h < 17) return 'Good afternoon'
+  if (h < 21) return 'Good evening'
+  return 'Still learning?'
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+function StatsRow() {
   const { stats, loading } = useStats()
 
   const items = [
     {
-      label: 'Total Resources',
+      label: 'Resources',
       value: stats?.total_resources ?? '—',
-      sub: `${stats?.free_resources ?? 0} free`,
-      icon: '📚',
+      sub:   `${stats?.free_resources ?? 0} free`,
+      Icon:  BookOpen,
       color: '#6366f1',
     },
     {
       label: 'Completed',
       value: stats?.completed_resources ?? 0,
-      sub: `${stats?.in_progress_resources ?? 0} in progress`,
-      icon: '✅',
+      sub:   `${stats?.in_progress_resources ?? 0} in progress`,
+      Icon:  TrendingUp,
       color: '#10b981',
     },
     {
       label: 'Opportunities',
       value: stats?.active_opportunities ?? '—',
-      sub: 'Active now',
-      icon: '💰',
+      sub:   'Active now',
+      Icon:  Zap,
       color: '#f97316',
     },
     {
-      label: 'Bookmarks',
+      label: 'Saved',
       value: stats?.bookmarks_count ?? 0,
-      sub: `${stats?.notes_count ?? 0} notes`,
-      icon: '🔖',
+      sub:   `${stats?.notes_count ?? 0} notes`,
+      Icon:  Bookmark,
       color: '#f59e0b',
     },
   ]
@@ -52,17 +66,22 @@ function StatsGrid() {
         <div
           key={item.label}
           className="stat-card"
-          style={{ borderColor: `${item.color}20` }}
+          style={{ borderColor: !loading ? `${item.color}18` : undefined }}
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-3">
             <p className="label">{item.label}</p>
-            <span className="text-lg">{item.icon}</span>
+            <div
+              className="w-7 h-7 rounded-md flex items-center justify-center"
+              style={{ background: `${item.color}14` }}
+            >
+              <item.Icon size={14} style={{ color: item.color }} strokeWidth={2} />
+            </div>
           </div>
           <p
             className="value"
-            style={{ color: loading ? 'rgba(255,255,255,0.1)' : item.color }}
+            style={{ color: loading ? 'var(--text-disabled)' : item.color }}
           >
-            {loading ? '···' : item.value}
+            {loading ? '—' : item.value}
           </p>
           <p className="sub">{item.sub}</p>
         </div>
@@ -71,38 +90,45 @@ function StatsGrid() {
   )
 }
 
-// ── Section Nav ───────────────────────────────────────────────
+// ── Section nav cards ─────────────────────────────────────────
+const SECTIONS = [
+  { href: '/ai-ml',               label: 'AI & ML',      Icon: Brain,   color: '#8b5cf6', desc: 'Courses, books, deep learning' },
+  { href: '/ai-agents',           label: 'AI Agents',    Icon: Bot,     color: '#a855f7', desc: 'Frameworks, MCP, projects' },
+  { href: '/blockchain',          label: 'Blockchain',   Icon: Blocks,  color: '#f59e0b', desc: '10 chains, Solidity, gas tracker' },
+  { href: '/blockchain-security', label: 'Security',     Icon: Shield,  color: '#ef4444', desc: 'Audit checklist, CTFs, bounties' },
+  { href: '/building-apps',       label: 'Build Apps',   Icon: Hammer,  color: '#10b981', desc: 'Dev tools, stack recommender' },
+  { href: '/opportunities',       label: 'Opportunities',Icon: Trophy,  color: '#f97316', desc: 'Hackathons, grants, fellowships' },
+]
+
 function SectionNav() {
-  const sections = NAV_ITEMS.filter((n) => n.href !== '/')
   return (
     <div>
-      <h2 className="text-[11px] font-semibold text-white/25 uppercase tracking-widest mb-3">
-        Sections
-      </h2>
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        {sections.map((section) => (
+      <h2 className="section-label mb-3">Sections</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
+        {SECTIONS.map((s) => (
           <Link
-            key={section.href}
-            href={section.href}
+            key={s.href}
+            href={s.href}
             className="believe-card p-4 flex items-center gap-3 group cursor-pointer"
           >
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0"
-              style={{ background: `${section.color}15`, border: `1px solid ${section.color}25` }}
+              className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0 transition-all group-hover:scale-105"
+              style={{ background: `${s.color}14`, border: `1px solid ${s.color}22` }}
             >
-              {section.icon}
+              <s.Icon size={17} style={{ color: s.color }} strokeWidth={1.8} />
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-white/80 group-hover:text-white transition-colors">
-                {section.label}
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
+                {s.label}
               </p>
-              <p className="text-[11px] text-white/30 leading-snug mt-0.5 truncate">
-                {section.description}
+              <p className="text-[11px] text-[var(--text-disabled)] mt-0.5 truncate">
+                {s.desc}
               </p>
             </div>
-            <span className="ml-auto text-white/15 group-hover:text-white/40 transition-colors text-sm flex-shrink-0">
-              →
-            </span>
+            <ArrowRight
+              size={14}
+              className="flex-shrink-0 text-[var(--text-disabled)] group-hover:text-[var(--text-tertiary)] group-hover:translate-x-0.5 transition-all"
+            />
           </Link>
         ))}
       </div>
@@ -110,109 +136,114 @@ function SectionNav() {
   )
 }
 
-// ── Featured Resources ────────────────────────────────────────
+// ── Daily tip ─────────────────────────────────────────────────
+const TIPS = [
+  'Read one chapter of Mastering Ethereum today.',
+  'Pick one Ethernaut level and solve it.',
+  'Study a real exploit on Solodit for 20 minutes.',
+  'Build a simple LangChain agent with one tool.',
+  'Check DoraHacks for a new hackathon to enter.',
+  'Go through the Hugging Face LLM course for 30 minutes.',
+  'Deploy a test contract to Sepolia testnet.',
+  'Read the Anthropic MCP docs for 20 minutes.',
+  'Submit a Superteam Earn bounty today.',
+  'Write a quick note on what you learned this week.',
+  'Run through one fast.ai lesson and take notes.',
+  'Study one Cyfrin security audit report.',
+  'Try one Damn Vulnerable DeFi challenge.',
+  'Review the Solana Cookbook for a pattern you haven\'t used.',
+]
+
+function DailyTip() {
+  const tip = TIPS[new Date().getDate() % TIPS.length]
+  return (
+    <div
+      className="believe-card p-4 flex items-center gap-4"
+      style={{ borderColor: 'rgba(99,102,241,0.18)', background: 'rgba(99,102,241,0.04)' }}
+    >
+      <div
+        className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0"
+        style={{ background: 'rgba(99,102,241,0.12)' }}
+      >
+        <Zap size={17} className="text-indigo-400" strokeWidth={2} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-indigo-400/60 mb-0.5">
+          Today's Focus
+        </p>
+        <p className="text-[13.5px] text-[var(--text-secondary)] leading-snug">{tip}</p>
+      </div>
+      <div className="text-right flex-shrink-0">
+        <p className="text-[11px] text-[var(--text-disabled)]">
+          {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ── Featured resources ────────────────────────────────────────
 function FeaturedResources() {
   const { resources, loading, refetch } = useFeaturedResources()
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-[11px] font-semibold text-white/25 uppercase tracking-widest">
-          Featured Resources
-        </h2>
-        <span className="text-[11px] text-white/20">{resources.length} featured</span>
+        <h2 className="section-label">Featured Resources</h2>
+        <span className="text-[11.5px] text-[var(--text-disabled)]">
+          {resources.length} featured
+        </span>
       </div>
-      <ResourceGrid resources={resources.slice(0, 6)} loading={loading} onUpdate={refetch} />
-    </div>
-  )
-}
-
-// ── Daily Focus Banner ────────────────────────────────────────
-function DailyFocus() {
-  const tips = [
-    'Start with one AI fundamentals lesson today.',
-    'Spend 30 minutes on a Solidity challenge.',
-    'Read one chapter of Mastering Ethereum.',
-    'Check DoraHacks for a new hackathon to enter.',
-    'Submit a Superteam bounty application.',
-    'Run through one Ethernaut level.',
-    'Study one real exploit on Solodit.',
-    'Build a simple LangChain agent with one tool.',
-    'Go through one chapter of Mastering Bitcoin.',
-    'Deploy a test contract on Sepolia testnet.',
-    'Read the Anthropic MCP docs for 20 minutes.',
-    'Review one smart contract audit report on Solodit.',
-    'Watch one fast.ai lesson and take notes.',
-    'Write a quick CrewAI agent that automates something small.',
-  ]
-  const today = new Date()
-  const tip = tips[today.getDate() % tips.length]
-
-  return (
-    <div className="believe-card p-4 flex items-center gap-4 border-indigo-500/20 bg-indigo-500/5">
-      <div className="w-10 h-10 rounded-xl bg-indigo-500/15 flex items-center justify-center text-xl flex-shrink-0">
-        🎯
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-indigo-400/60 mb-0.5">
-          Daily Focus
-        </p>
-        <p className="text-sm text-white/65 leading-snug">{tip}</p>
-      </div>
-      <div className="text-right flex-shrink-0">
-        <p className="text-[11px] text-white/20">
-          {today.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-        </p>
-        <p className="text-[11px] text-indigo-400/40 mt-0.5">Day {today.getDate()}</p>
-      </div>
+      <ResourceGrid
+        resources={resources.slice(0, 6)}
+        loading={loading}
+        onUpdate={refetch}
+      />
     </div>
   )
 }
 
 // ── Page ──────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'
-
   return (
     <div className="space-y-8">
 
-      {/* Hero greeting */}
+      {/* Hero */}
       <div>
-        <h1 className="text-3xl font-bold text-white tracking-tight">
-          Good {greeting} <span className="text-indigo-400">.</span>
+        <h1 className="text-[2rem] font-bold tracking-tight">
+          {getGreeting()}{' '}
+          <span className="gradient-text">.</span>
         </h1>
-        <p className="text-sm text-white/30 mt-1">
-          Your Believe platform is live. 2 weeks. Everything.
+        <p className="text-[14px] mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
+          Your open learning platform is ready. AI, Blockchain, Security — all in one place.
         </p>
       </div>
 
-      {/* Daily focus */}
-      <DailyFocus />
+      {/* Daily tip */}
+      <DailyTip />
 
       {/* Stats */}
-      <StatsGrid />
+      <StatsRow />
 
       {/* Progress rings */}
       <ProgressRings />
 
-      {/* Two-col: goals + streak */}
+      {/* Goals + streak */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DailyGoals />
         <StreakCounter />
       </div>
 
-      {/* Two-col: activity + notes */}
+      {/* Section nav */}
+      <SectionNav />
+
+      {/* Activity + notes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <RecentActivity />
         <QuickNotes />
       </div>
 
-      {/* Section nav */}
-      <SectionNav />
-
-      {/* Featured resources */}
+      {/* Featured */}
       <FeaturedResources />
-
     </div>
   )
 }

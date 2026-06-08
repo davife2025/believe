@@ -1,7 +1,7 @@
 'use client'
-
 import { useState } from 'react'
-import { PageHeader } from '@/components/layout/PageHeader'
+import { Hammer } from 'lucide-react'
+import { PageHeader, ViewToggle } from '@/components/layout/PageHeader'
 import { ResourceGrid, ResourceFiltersBar } from '@/components/resources/ResourceGrid'
 import { DevToolGrid } from '@/components/building/DevToolCard'
 import { StackRecommender, ProjectTemplates } from '@/components/building/StackRecommender'
@@ -9,70 +9,33 @@ import { SubcategoryTabs } from '@/components/ui/SubcategoryTabs'
 import { useResources } from '@/hooks/useResources'
 import type { ResourceFilters } from '@/lib/types'
 
-type ViewMode = 'tools' | 'recommender' | 'templates' | 'resources'
+type View = 'tools' | 'recommender' | 'templates' | 'resources'
 
-const SUBCATEGORY_TABS = [
-  { label: 'All',            value: undefined,       icon: '🌐' },
-  { label: 'Dev Tools',      value: 'tools',         icon: '🔧' },
-  { label: 'Frameworks',     value: 'frameworks',    icon: '⚙️' },
-  { label: 'Tutorials',      value: 'tutorials',     icon: '🧑‍💻' },
-  { label: 'Infrastructure', value: 'infrastructure',icon: '🌐' },
+const TABS = [
+  {label:'All',value:undefined},{label:'Dev Tools',value:'tools'},
+  {label:'Frameworks',value:'frameworks'},{label:'Tutorials',value:'tutorials'},
+  {label:'Infrastructure',value:'infrastructure'},
 ]
 
 export default function BuildingAppsPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>('tools')
-  const [filters, setFilters] = useState<ResourceFilters>({ category: 'building-apps' })
+  const [view, setView]         = useState<View>('tools')
+  const [filters, setFilters]   = useState<ResourceFilters>({ category: 'building-apps' })
   const { resources, loading, refetch } = useResources(filters)
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        icon="🏗️"
-        title="Building Applications"
-        description="Every tool, framework, and stack to go from idea to deployed dApp — with build checklists."
-        color="#10b981"
-      >
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-white/5 border border-white/[0.07]">
-          {([
-            { id: 'tools',       label: '🔧 Tools'       },
-            { id: 'recommender', label: '🧙 Stack Quiz'   },
-            { id: 'templates',   label: '📐 Templates'    },
-            { id: 'resources',   label: '📚 Resources'    },
-          ] as { id: ViewMode; label: string }[]).map((v) => (
-            <button
-              key={v.id}
-              onClick={() => setViewMode(v.id)}
-              className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
-                viewMode === v.id
-                  ? 'bg-emerald-500/20 text-emerald-400'
-                  : 'text-white/35 hover:text-white/60'
-              }`}
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
+      <PageHeader icon={Hammer} title="Building Applications" description="Every tool, framework, and stack template to go from idea to deployed dApp." color="#10b981">
+        <ViewToggle views={[{id:'tools',label:'🔧 Tools'},{id:'recommender',label:'🧙 Stack Quiz'},{id:'templates',label:'📐 Templates'},{id:'resources',label:'📚 Resources'}]} active={view} onChange={(v) => setView(v as View)} color="#10b981" />
       </PageHeader>
-
-      {viewMode === 'tools'       && <DevToolGrid />}
-      {viewMode === 'recommender' && <StackRecommender />}
-      {viewMode === 'templates'   && <ProjectTemplates />}
-
-      {viewMode === 'resources' && (
-        <div className="space-y-4">
-          <SubcategoryTabs
-            tabs={SUBCATEGORY_TABS}
-            active={filters.subcategory}
-            onChange={(v) => setFilters({ ...filters, subcategory: v })}
-            color="#10b981"
-          />
-          <ResourceFiltersBar
-            filters={filters}
-            onChange={(f) => setFilters({ ...f, category: 'building-apps' })}
-            totalCount={resources.length}
-          />
+      {view === 'tools'       && <DevToolGrid />}
+      {view === 'recommender' && <StackRecommender />}
+      {view === 'templates'   && <ProjectTemplates />}
+      {view === 'resources'   && (
+        <>
+          <SubcategoryTabs tabs={TABS} active={filters.subcategory} onChange={(v) => setFilters({...filters,subcategory:v})} color="#10b981" />
+          <ResourceFiltersBar filters={filters} onChange={(f) => setFilters({...f,category:'building-apps'})} totalCount={resources.length} accentColor="#10b981" />
           <ResourceGrid resources={resources} loading={loading} onUpdate={refetch} />
-        </div>
+        </>
       )}
     </div>
   )
